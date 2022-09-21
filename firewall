@@ -7,53 +7,53 @@ echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
 
 # Drop source routed packets
 echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
- 
+
 # Enable TCP SYN cookie protection from SYN floods
 echo 1 > /proc/sys/net/ipv4/tcp_syncookies
- 
+
 # Don't accept ICMP redirect messages
 echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
- 
+
 # Don't send ICMP redirect messages
 echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
- 
+
 # Enable source address spoofing protection
 echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
- 
+
 # Log packets with impossible source addresses
 echo 1 > /proc/sys/net/ipv4/conf/all/log_martians
- 
+
 # Flush all chains
 /sbin/iptables --flush
- 
+
 # Allow unlimited traffic on the loopback interface
 /sbin/iptables -A INPUT -i lo -j ACCEPT
 /sbin/iptables -A OUTPUT -o lo -j ACCEPT
- 
+
 # Set default policies
 /sbin/iptables --policy INPUT DROP
 /sbin/iptables --policy OUTPUT DROP
 /sbin/iptables --policy FORWARD DROP
- 
+
 # Previously initiated and accepted exchanges bypass rule checking
 # Allow unlimited outbound traffic
 /sbin/iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 /sbin/iptables -A OUTPUT -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
- 
+
 #Ratelimit SSH for attack protection
 /sbin/iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -j DROP
 /sbin/iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
 /sbin/iptables -A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT
- 
+
 # Allow certain ports to be accessible from the outside
 /sbin/iptables -A INPUT -p tcp --dport 9090 -m state --state NEW -j ACCEPT   # PiHole
 /sbin/iptables -A INPUT -p tcp --dport 8488 -m state --state NEW -j ACCEPT   # Shadowsocks
 
 # Wireguard rules - Change 'eno1' to your network name
-/sbin/iptables -t nat -A POSTROUTING -s 10.6.0.2/24 -o eno1 -j MASQUERADE
+/sbin/iptables -I INPUT 1 -i wg0 -j ACCEPT
 /sbin/iptables -I FORWARD 1 -i eno1 -o wg0 -j ACCEPT
 /sbin/iptables -I FORWARD 1 -i wg0 -o eno1 -j ACCEPT
-#/sbin/iptables -I INPUT 1 -i wg0 -j ACCEPT
+/sbin/iptables -t nat -A POSTROUTING -s 10.6.0.2/24 -o eno1 -j MASQUERADE
 
 # Other rules for future use if needed.  Uncomment to activate
 /sbin/iptables -A INPUT -p tcp --dport 80 -m state --state NEW -j ACCEPT    # http
