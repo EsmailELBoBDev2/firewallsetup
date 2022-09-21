@@ -46,15 +46,21 @@ echo 1 > /proc/sys/net/ipv4/conf/all/log_martians
 /sbin/iptables -A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT
  
 # Allow certain ports to be accessible from the outside
-/sbin/iptables -A INPUT -p tcp --dport 9090 -m state --state NEW -j ACCEPT #pihole
-/sbin/iptables -A INPUT -p tcp --dport 8488 -m state --state NEW -j ACCEPT #shadowsocks
+/sbin/iptables -A INPUT -p tcp --dport 9090 -m state --state NEW -j ACCEPT   # PiHole
+/sbin/iptables -A INPUT -p tcp --dport 8488 -m state --state NEW -j ACCEPT   # Shadowsocks
+
+# Wireguard rules - Change 'eno1' to your network name
+/sbin/iptables -t nat -A POSTROUTING -s 10.6.0.2/24 -o eno1 -j MASQUERADE
+/sbin/iptables -I FORWARD 1 -i eno1 -o wg0 -j ACCEPT
+/sbin/iptables -I FORWARD 1 -i wg0 -o eno1 -j ACCEPT
+#/sbin/iptables -I INPUT 1 -i wg0 -j ACCEPT
 
 # Other rules for future use if needed.  Uncomment to activate
 /sbin/iptables -A INPUT -p tcp --dport 80 -m state --state NEW -j ACCEPT    # http
 /sbin/iptables -A INPUT -p tcp --dport 443 -m state --state NEW -j ACCEPT   # https
 
 # UDP packet rule.  
-/sbin/iptables -A INPUT -p udp --dport 8488 -m state --state NEW -j ACCEPT #shadowsocks
+/sbin/iptables -A INPUT -p udp --dport 8488 -m state --state NEW -j ACCEPT # Shadowsocks
 
 # Allow pinging of your server
 /sbin/iptables -A INPUT -p icmp --icmp-type 8 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
